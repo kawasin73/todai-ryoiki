@@ -1,2 +1,5 @@
 .venv/
 .envrc
+*.csv
+*.png
+*.ipynb
