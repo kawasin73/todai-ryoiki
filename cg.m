@@ -223,7 +223,7 @@ csvwrite("iterations.csv", [cases', citers', piters'])
 
 # save errors result
 maxn = max(citers(end), piters(end))
-plot(1:maxn, cerrors(end, 1:maxn), ';CG method;', 1:maxn, perrors(end, 1:maxn), ';PCG method;');
+semilogy(1:maxn, cerrors(end, 1:maxn), ';CG method;', 1:maxn, perrors(end, 1:maxn), ';PCG method;');
 title("size of error");
 ylabel("error");
 xlabel("iteration");
