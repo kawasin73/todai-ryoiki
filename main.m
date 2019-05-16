@@ -124,7 +124,7 @@ for n = cases
     # execute PCG method
     disp(sprintf("start PCG method n == %d", n));
     [_, start, _] = cputime();
-    [_, iter, errors] = pcg(Ku, fu', x0', nmax, tol, P);
+    [_, iter, errors] = pcg(Ku, fu', x0', nmax, tol, @(r) P \ r);
     [_, finish, _] = cputime();
     total = finish - start;
     disp(sprintf("finish PCG method %d iteration, %d seconds", iter, total));
@@ -139,7 +139,7 @@ for n = cases
     P = build_ebe_prematrix(K, e, n, n);
     Pu = P(free_idx, free_idx);
     [_, start, _] = cputime();
-    [_, iter, errors] = pcg(Ku, fu', x0', nmax, tol, Pu);
+    [_, iter, errors] = pcg(Ku, fu', x0', nmax, tol, @(r) Pu \ r);
     [_, finish, _] = cputime();
     total = finish - startpre;
     disp(sprintf("finish PCG method %d iteration, %d seconds", iter, total));

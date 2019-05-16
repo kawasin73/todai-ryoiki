@@ -3,12 +3,12 @@
 #
 
 # implementation of Preconditioned Conjugate Gradient Method
-function [x, iter, errors] = pcg(A, b, x0, nmax, tol, P)
+function [x, iter, errors] = pcg(A, b, x0, nmax, tol, apply_P)
     # setup
     iter = 0;
     x = x0;
     r = b - (A * x);
-    z = P \ r;
+    z = apply_P(r);
     p = z;
 
     rho2 = 0;
@@ -29,7 +29,7 @@ function [x, iter, errors] = pcg(A, b, x0, nmax, tol, P)
         x = x + alpha * p;
         rho2 = rho;
         r = r - alpha * (A * p);
-        z = P \ r;
+        z = apply_P(r);
         rho = r' * z;
         errors(iter + 1) = r' * r;
         x;
