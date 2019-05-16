@@ -1,34 +1,37 @@
 #
-# Conjugate Gradient Method
+# Preconditioned Conjugate Gradient Method
 #
 
-# implementation of Conjugate Gradient Method
-function [x, iter, errors] = cg(A, b, x0, nmax, tol)
+# implementation of Preconditioned Conjugate Gradient Method
+function [x, iter, errors] = pcg(A, b, x0, nmax, tol, P)
     # setup
     iter = 0;
     x = x0;
     r = b - (A * x);
-    p = r;
+    z = P \ r;
+    p = z;
+
     rho2 = 0;
-    rho = r' * r;
+    rho = r' * z;
 
     # preallocate errors array
     errors = NaN(1, nmax);
-    errors(1) = rho;
+    errors(1) = r' * r;
 
-    while iter < nmax && rho > tol
+    while iter < nmax && errors(iter+1) > tol
         iter++;
         if iter != 1
             beta = rho / rho2;
-            p = r + beta * p;
+            p = z + beta * p;
         endif
 
         alpha = rho / (p' * A * p);
         x = x + alpha * p;
         rho2 = rho;
         r = r - alpha * (A * p);
-        rho = r' * r;
-        errors(iter + 1) = rho;
+        z = P \ r;
+        rho = r' * z;
+        errors(iter + 1) = r' * r;
         x;
     endwhile
 
