@@ -10,67 +10,139 @@ e = [ 494505.49450549431 178571.42857142852 -302197.80219780206 -13736.263736263
  54945.054945054952 -13736.263736263736 -247252.74725274718 178571.42857142849 -302197.802197802 13736.263736263725 494505.49450549431 -178571.42857142852
  13736.263736263729 -302197.80219780206 178571.42857142852 -247252.74725274718 -13736.263736263732 54945.054945054944 -178571.42857142852 494505.49450549431];
 
+function A = get_element_matrix(i, j, nx, ny, As)
+    eidx = 0;
+    switch (j)
+    case 1
+        eidx = 0;
+    case ny
+        eidx = 6;
+    otherwise
+        eidx = 3;
+    end
+    switch (i)
+    case 1
+        eidx += 1;
+    case nx
+        eidx += 3;
+    otherwise
+        eidx += 2;
+    end
+    A = As(:,:,eidx);
+    return
+endfunction
+
+function idx = get_new_idx(nx, i, j)
+    idx = build_index_for_element(nx, i, j);
+    idx(1:4) -= 2 * j;
+    idx(5:8) -= 2 * (j+1);
+    if i == 1
+        idx = idx(3:6);
+    endif
+    return
+endfunction
+
 # build preconditioning matrix by EBE (Element By Element Method)
-function result = apply_ebe_prematrix(r, Ads, Ls, Ds, Us)
-    r = Ads \ r;
-    r = Us \ r;
-    r = Ds \ r;
-    r = Ls \ r;
-    r = Ads \ r;
+function result = apply_ebe_prematrix(r, Adis, Ls, Ds, Us, nx, ny)
+    # r = Ads \ r
+    r = Adis * r;
+
+    # r = Us \ r
+    for j = ny:-1:1
+        for i = nx:-1:1
+            U = get_element_matrix(i, j, nx, ny, Us);
+            if i == 1
+                U = U(1:4, 1:4);
+            endif
+            idx = get_new_idx(nx, i, j);
+            
+            r(idx) = U \ r(idx);
+        endfor
+    endfor
+
+    # r = Ds \ r
+    for j = 1:ny
+        for i = 1:nx
+            D = get_element_matrix(i, j, nx, ny, Ds);
+            if i == 1
+                D = D(1:4, 1:4);
+            endif
+            idx = get_new_idx(nx, i, j);
+            
+            r(idx) = D \ r(idx);
+        endfor
+    endfor
+    
+    # r = Ls \ r
+    for j = 1:ny
+        for i = 1:nx
+            L = get_element_matrix(i, j, nx, ny, Ls);
+            if i == 1
+                L = L(1:4, 1:4);
+            endif
+            idx = get_new_idx(nx, i, j);
+            
+            r(idx) = L \ r(idx);
+        endfor
+    endfor
+
+    # r = Ads \ r
+    r = Adis * r;
+
     result = r;
     return;
 endfunction
 
-function apply_P = build_ebe_prematrix(A, ematrix, nx, ny, free_idx)
-    points = (nx+1) * (ny+1) * 2;
-
+function apply_P = build_ebe_prematrix(Au, ematrix, nx, ny)
     # validate
-    if nx < 1 || ny < 1
+    if nx < 2 || ny < 2
         error("nx and ny must greater than or equals to 2")
     elseif size(ematrix, 1) != 8 || size(ematrix, 2) != 8
         error("matrix of element must be 8 * 8 matrix")
-    elseif size(A, 1) != points || size(A, 2) != points
-        error("matrix A is not match to nx, ny")
     endif
-
+    
     # diagonal matrix of A
-    Ad = diag(diag(A));
-
-    Eye = speye(points, points);
-    Ls = speye(points, points);
-    Ds = speye(points, points);
-    Ad = sparse(Ad);
-
+    Ad = diag(diag(Au));
     # Ad ^ 1/2
-    Ads = sqrt(Ad);
-    # Ad ^ -1/2
-    Adsi = inv(Ads);
-
+    Adis = inv(sqrt(Ad));
+    
+    A9 = build_global_matrix(ematrix, 3, 3, false);
+    Ad9 = inv(sqrt(diag(diag(A9))));
+    
+    Ls = zeros(8, 8, 9);
+    Ds = zeros(8, 8, 9);
+    Us = zeros(8, 8, 9);
+    
+    eidx = 1;
     # caluculate each element matrix
-    for j = 1:(ny)
-        for i = 1:(nx)
-            # create element matrix
-            idx = build_index_for_element(nx, i, j);
-            Ae = sparse(points, points);
-            Ae(idx, idx) += ematrix;
-
-            # scaled, regularzied element array
-            rAe = Eye + Adsi * (Ae - diag(diag(Ae))) * Adsi;
-
+    for j = 1:3
+        for i = 1:3
+            idx = build_index_for_element(3, i, j);
+            Ae = eye(8,8) + Ad9(idx, idx) * (ematrix - diag(diag(ematrix))) * Ad9(idx, idx);
+            
+            if i == 1
+                tmp = zeros(8, 8);
+                tmp(1:4, 1:4) = Ae(3:6, 3:6);
+                Ae = tmp;
+            endif
+        
             # https://octave.sourceforge.io/octave/function/lu.html
             # When called with two or three output arguments and a sparse input matrix, lu does not attempt to perform sparsity preserving column permutations
-            [L, U] = lu(rAe);
+            [L, U] = lu(Ae);
             D = diag(diag(U));
-
+            
             # mutiply L, D, L'
-            Ls = Ls * L;
-            Ds = Ds * D;
+            Ls(:, :, eidx) = L;
+            Ds(:, :, eidx) = D;
+            Us(:, :, eidx) = L';
+            eidx += 1;
         endfor
     endfor
-
-    apply_P = @(r) apply_ebe_prematrix(r, Ads(free_idx, free_idx), Ls(free_idx, free_idx), Ds(free_idx, free_idx), Ls'(free_idx, free_idx));
+    
+    apply_P = @(r) apply_ebe_prematrix(r, Adis, Ls, Ds, Us, nx, ny);
     return;
 endfunction
+
 
 #
 # THIS IS MAIN TEST
@@ -80,7 +152,7 @@ endfunction
 warning('off', 'all');
 
 # parameters
-cases = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30, 40, 50, 60, 70]; # , 80, 90, 100, 200, 300
+cases = [2, 3, 4, 5, 6, 7, 8, 9, 10, 20]; # , 30, 40, 50, 60, 70, 80, 90, 100, 200, 300
 nmax = 20000;
 tol = 10 ^ -6;
 
@@ -141,7 +213,7 @@ for n = cases
     # execute PCG method with EBE
     disp(sprintf("start PCG method with EBE n == %d", n));
     [_, startpre, _] = cputime();
-    apply_Pu = build_ebe_prematrix(K, e, n, n, free_idx);
+    apply_Pu = build_ebe_prematrix(Ku, e, n, n, free_idx);
     [_, start, _] = cputime();
     [_, iter, errors] = pcg(Ku, fu', x0', nmax, tol, apply_Pu);
     [_, finish, _] = cputime();
