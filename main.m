@@ -10,6 +10,12 @@ e = [ 494505.49450549431 178571.42857142852 -302197.80219780206 -13736.263736263
  54945.054945054952 -13736.263736263736 -247252.74725274718 178571.42857142849 -302197.802197802 13736.263736263725 494505.49450549431 -178571.42857142852
  13736.263736263729 -302197.80219780206 178571.42857142852 -247252.74725274718 -13736.263736263732 54945.054945054944 -178571.42857142852 494505.49450549431];
 
+# dof returns degree of freedom
+function n = dof(nx, ny)
+    n = (nx) * (ny + 1) * 2 - 3;
+    return
+endfunction
+
 #
 # THIS IS MAIN TEST
 #
@@ -20,7 +26,13 @@ warning('off', 'all');
 # parameters
 cases = [2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]; # , 200, 300
 nmax = 20000;
-tol = 10 ^ -6;
+tol = 10 ^ -10;
+
+# dof array
+dofs = NaN(1, size(cases, 2));
+for i = 1:size(cases,2)
+    dofs(i) = dof(cases(i), cases(i));
+endfor
 
 # result containers
 cerrors = NaN(size(cases, 2), nmax);
@@ -109,20 +121,22 @@ endfor
 #
 
 # save cputime result
-loglog(cases, ctimes', ';CG method;', cases, ptimes', ';PCG method;', cases, ebetimes', ';PCG with EBE;', cases, ebecgtimes', ';EBE without P;', cases, ebetimes' - ebecgtimes', ';EBE;');
+loglog(dofs, ctimes', ';CG method;', dofs, ptimes', ';PCG method;', dofs, ebetimes', ';PCG with EBE;', dofs, ebecgtimes', ';EBE without P;', dofs, ebetimes' - ebecgtimes', ';EBE;');
 title("calculation time");
 ylabel("calculation time");
-xlabel("size of object");
+xlabel("degrees of freedom");
+legend("location", "northwest");
 print("cputime.png", "-dpng")
-csvwrite("cputime.csv", [cases', ctimes', ptimes', ebetimes', ebecgtimes'])
+csvwrite("cputime.csv", [dofs', ctimes', ptimes', ebetimes', ebecgtimes'])
 
 # save iterations result
-loglog(cases, citers', ';CG method;', cases, piters', ';PCG method;', cases, ebeiters', ';PCG with EBE;');
+plot(dofs, citers', ';CG method;', dofs, piters', ';PCG method;', dofs, ebeiters', ';PCG with EBE;');
 title("count of iteration");
 ylabel("iterations");
-xlabel("size of object");
+xlabel("degrees of freedom");
+legend("location", "northwest");
 print("iterations.png", "-dpng")
-csvwrite("iterations.csv", [cases', citers', piters', ebeiters'])
+csvwrite("iterations.csv", [dofs', citers', piters', ebeiters'])
 
 # save errors result
 maxn = max(citers(end), piters(end))
