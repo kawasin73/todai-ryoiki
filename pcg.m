@@ -18,7 +18,7 @@ function [x, iter, errors] = pcg(A, b, x0, nmax, tol, apply_P)
     errors = NaN(1, nmax);
     errors(1) = r' * r;
 
-    while iter < nmax && errors(iter+1) > tol
+    while iter < nmax-1 && errors(iter+1) > tol
         iter++;
         if iter != 1
             beta = rho / rho2;

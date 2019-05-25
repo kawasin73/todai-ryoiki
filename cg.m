@@ -16,7 +16,7 @@ function [x, iter, errors] = cg(A, b, x0, nmax, tol)
     errors = NaN(1, nmax);
     errors(1) = rho;
 
-    while iter < nmax && rho > tol
+    while iter < nmax-1 && rho > tol
         iter++;
         if iter != 1
             beta = rho / rho2;
