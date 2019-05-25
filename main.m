@@ -10,135 +10,6 @@ e = [ 494505.49450549431 178571.42857142852 -302197.80219780206 -13736.263736263
  54945.054945054952 -13736.263736263736 -247252.74725274718 178571.42857142849 -302197.802197802 13736.263736263725 494505.49450549431 -178571.42857142852
  13736.263736263729 -302197.80219780206 178571.42857142852 -247252.74725274718 -13736.263736263732 54945.054945054944 -178571.42857142852 494505.49450549431];
 
-function A = get_element_matrix(i, j, nx, ny, As)
-    eidx = 0;
-    switch (j)
-    case 1
-        eidx = 0;
-    case ny
-        eidx = 6;
-    otherwise
-        eidx = 3;
-    end
-    switch (i)
-    case 1
-        eidx += 1;
-    case nx
-        eidx += 3;
-    otherwise
-        eidx += 2;
-    end
-    A = As(:,:,eidx);
-    return
-endfunction
-
-function idx = get_new_idx(nx, i, j)
-    idx = build_index_for_element(nx, i, j);
-    idx(1:4) -= 2 * j;
-    idx(5:8) -= 2 * (j+1);
-    if i == 1
-        idx = idx(3:6);
-    endif
-    return
-endfunction
-
-# build preconditioning matrix by EBE (Element By Element Method)
-function result = apply_ebe_prematrix(r, Adis, Ls, Ds, Us)
-    # r = Ads \ r
-    r = Adis * r;
-    r = Ls \ r;
-    r = Ds \ r;
-    r = Us \ r;
-    r = Adis * r;
-
-    result = r;
-    return;
-endfunction
-
-function apply_P = build_ebe_prematrix(Au, ematrix, nx, ny)
-    # validate
-    if nx < 2 || ny < 2
-        error("nx and ny must greater than or equals to 2")
-    elseif size(ematrix, 1) != 8 || size(ematrix, 2) != 8
-        error("matrix of element must be 8 * 8 matrix")
-    endif
-    
-    # diagonal matrix of A
-    Ad = diag(diag(Au));
-    # Ad ^ 1/2
-    Adis = inv(sqrt(Ad));
-    
-    A9 = build_global_matrix(ematrix, 3, 3, false);
-    Ad9 = inv(sqrt(diag(diag(A9))));
-    
-    L9s = zeros(8, 8, 9);
-    D9s = zeros(8, 8, 9);
-    U9s = zeros(8, 8, 9);
-    
-    eidx = 1;
-    # caluculate 9 element matrix
-    for j = 1:3
-        for i = 1:3
-            idx = build_index_for_element(3, i, j);
-            Ae = eye(8,8) + Ad9(idx, idx) * (ematrix - diag(diag(ematrix))) * Ad9(idx, idx);
-            
-            if i == 1
-                tmp = zeros(8, 8);
-                tmp(1:4, 1:4) = Ae(3:6, 3:6);
-                Ae = tmp;
-            endif
-        
-            # https://octave.sourceforge.io/octave/function/lu.html
-            # When called with two or three output arguments and a sparse input matrix, lu does not attempt to perform sparsity preserving column permutations
-            [L, U] = lu(Ae);
-            D = diag(diag(U));
-            
-            # mutiply L, D, L'
-            L9s(:, :, eidx) = L;
-            D9s(:, :, eidx) = D;
-            U9s(:, :, eidx) = L';
-            eidx += 1;
-        endfor
-    endfor
-    
-    points = nx * (ny+1) * 2;
-    
-    Us = speye(points, points);
-    Ds = speye(points, points);
-    Ls = speye(points, points);
-
-    for j = 1:ny
-        for i = 1:nx
-            idx = get_new_idx(nx, i, j);
-            
-            # calc Us
-            U = get_element_matrix(i, j, nx, ny, U9s);
-            if i == 1
-                U = U(1:4, 1:4);
-            endif
-            Us(idx, idx) = Us(idx, idx) * U;
-
-            # calc Ds
-            D = get_element_matrix(i, j, nx, ny, D9s);
-            if i == 1
-                D = D(1:4, 1:4);
-            endif
-            Ds(idx, idx) = D * Ds(idx, idx);
-            
-            # calc Ls
-            L = get_element_matrix(i, j, nx, ny, L9s);
-            if i == 1
-                L = L(1:4, 1:4);
-            endif
-            Ls(idx, idx) = L * Ls(idx, idx);
-        endfor
-    endfor
-    
-    apply_P = @(r) apply_ebe_prematrix(r, Adis, Ls, Ds, Us);
-    return;
-endfunction
-
-
 #
 # THIS IS MAIN TEST
 #
@@ -208,7 +79,17 @@ for n = cases
     # execute PCG method with EBE
     disp(sprintf("start PCG method with EBE n == %d", n));
     [_, startpre, _] = cputime();
-    apply_Pu = build_ebe_prematrix(Ku, e, n, n, free_idx);
+    
+    # ~ 100 elements
+    % apply_Pu = build_ebe_from_big_element(K, e, n, n, free_idx);
+
+    # ~ 50 elements
+    % apply_Pu = build_ebe_from_each_element(Ku, e, n, n);
+    
+    # ~ 100 elements
+    apply_Pu = build_ebe_from_each_element_compact(Ku, e, n, n);
+    
+    
     [_, start, _] = cputime();
     [_, iter, errors] = pcg(Ku, fu', x0', nmax, tol, apply_Pu);
     [_, finish, _] = cputime();
