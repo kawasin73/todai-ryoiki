@@ -29,6 +29,14 @@ function apply_P = build_ebe_from_each_element_compact(Au, ematrix, nx, ny)
                 tmp = zeros(8, 8);
                 tmp(1:4, 1:4) = Ae(3:6, 3:6);
                 Ae = tmp;
+            else
+                # swap order
+                tmp = Ae(5:6, :);
+                Ae(5:6, :) = Ae(7:8, :);
+                Ae(7:8, :) = tmp;
+                tmp = Ae(:, 5:6);
+                Ae(:, 5:6) = Ae(:, 7:8);
+                Ae(:, 7:8) = tmp;
             endif
         
             # https://octave.sourceforge.io/octave/function/lu.html
@@ -52,7 +60,7 @@ function apply_P = build_ebe_from_each_element_compact(Au, ematrix, nx, ny)
 
     for j = 1:ny
         for i = 1:nx
-            idx = build_new_index_for_element(nx, i, j);
+            idx = build_new_index_for_element_swap(nx, i, j);
             
             # calc Us
             U = get_element_matrix(i, j, nx, ny, U9s);
@@ -79,6 +87,21 @@ function apply_P = build_ebe_from_each_element_compact(Au, ematrix, nx, ny)
     
     apply_P = @(r) apply_ebe_from_each_element_compact(r, Adis, Ls, Ds, Us);
     return;
+endfunction
+
+function idx = build_new_index_for_element_swap(nx, i, j)
+    idx = build_index_for_element(nx, i, j);
+    idx(1:4) -= 2 * j;
+    idx(5:8) -= 2 * (j+1);
+    if i == 1
+        idx = idx(3:6);
+    else
+        # swap order
+        tmp = idx(7:8);
+        idx(7:8) = idx(5:6);
+        idx(5:6) = tmp;
+    endif
+    return
 endfunction
 
 function result = apply_ebe_from_each_element_compact(r, Adis, Ls, Ds, Us)
