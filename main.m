@@ -43,50 +43,12 @@ function idx = get_new_idx(nx, i, j)
 endfunction
 
 # build preconditioning matrix by EBE (Element By Element Method)
-function result = apply_ebe_prematrix(r, Adis, Ls, Ds, Us, nx, ny)
+function result = apply_ebe_prematrix(r, Adis, Ls, Ds, Us)
     # r = Ads \ r
     r = Adis * r;
-
-    # r = Us \ r
-    for j = ny:-1:1
-        for i = nx:-1:1
-            U = get_element_matrix(i, j, nx, ny, Us);
-            if i == 1
-                U = U(1:4, 1:4);
-            endif
-            idx = get_new_idx(nx, i, j);
-            
-            r(idx) = U \ r(idx);
-        endfor
-    endfor
-
-    # r = Ds \ r
-    for j = 1:ny
-        for i = 1:nx
-            D = get_element_matrix(i, j, nx, ny, Ds);
-            if i == 1
-                D = D(1:4, 1:4);
-            endif
-            idx = get_new_idx(nx, i, j);
-            
-            r(idx) = D \ r(idx);
-        endfor
-    endfor
-    
-    # r = Ls \ r
-    for j = 1:ny
-        for i = 1:nx
-            L = get_element_matrix(i, j, nx, ny, Ls);
-            if i == 1
-                L = L(1:4, 1:4);
-            endif
-            idx = get_new_idx(nx, i, j);
-            
-            r(idx) = L \ r(idx);
-        endfor
-    endfor
-
-    # r = Ads \ r
+    r = Ls \ r;
+    r = Ds \ r;
+    r = Us \ r;
     r = Adis * r;
 
     result = r;
@@ -109,12 +71,12 @@ function apply_P = build_ebe_prematrix(Au, ematrix, nx, ny)
     A9 = build_global_matrix(ematrix, 3, 3, false);
     Ad9 = inv(sqrt(diag(diag(A9))));
     
-    Ls = zeros(8, 8, 9);
-    Ds = zeros(8, 8, 9);
-    Us = zeros(8, 8, 9);
+    L9s = zeros(8, 8, 9);
+    D9s = zeros(8, 8, 9);
+    U9s = zeros(8, 8, 9);
     
     eidx = 1;
-    # caluculate each element matrix
+    # caluculate 9 element matrix
     for j = 1:3
         for i = 1:3
             idx = build_index_for_element(3, i, j);
@@ -132,14 +94,47 @@ function apply_P = build_ebe_prematrix(Au, ematrix, nx, ny)
             D = diag(diag(U));
             
             # mutiply L, D, L'
-            Ls(:, :, eidx) = L;
-            Ds(:, :, eidx) = D;
-            Us(:, :, eidx) = L';
+            L9s(:, :, eidx) = L;
+            D9s(:, :, eidx) = D;
+            U9s(:, :, eidx) = L';
             eidx += 1;
         endfor
     endfor
     
-    apply_P = @(r) apply_ebe_prematrix(r, Adis, Ls, Ds, Us, nx, ny);
+    points = nx * (ny+1) * 2;
+    
+    Us = speye(points, points);
+    Ds = speye(points, points);
+    Ls = speye(points, points);
+
+    for j = 1:ny
+        for i = 1:nx
+            idx = get_new_idx(nx, i, j);
+            
+            # calc Us
+            U = get_element_matrix(i, j, nx, ny, U9s);
+            if i == 1
+                U = U(1:4, 1:4);
+            endif
+            Us(idx, idx) = Us(idx, idx) * U;
+
+            # calc Ds
+            D = get_element_matrix(i, j, nx, ny, D9s);
+            if i == 1
+                D = D(1:4, 1:4);
+            endif
+            Ds(idx, idx) = D * Ds(idx, idx);
+            
+            # calc Ls
+            L = get_element_matrix(i, j, nx, ny, L9s);
+            if i == 1
+                L = L(1:4, 1:4);
+            endif
+            Ls(idx, idx) = L * Ls(idx, idx);
+        endfor
+    endfor
+    
+    apply_P = @(r) apply_ebe_prematrix(r, Adis, Ls, Ds, Us);
     return;
 endfunction
 
@@ -152,7 +147,7 @@ endfunction
 warning('off', 'all');
 
 # parameters
-cases = [2, 3, 4, 5, 6, 7, 8, 9, 10, 20]; # , 30, 40, 50, 60, 70, 80, 90, 100, 200, 300
+cases = [2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]; # , 200, 300
 nmax = 20000;
 tol = 10 ^ -6;
 
