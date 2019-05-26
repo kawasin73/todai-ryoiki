@@ -10,12 +10,6 @@ e = [ 494505.49450549431 178571.42857142852 -302197.80219780206 -13736.263736263
  54945.054945054952 -13736.263736263736 -247252.74725274718 178571.42857142849 -302197.802197802 13736.263736263725 494505.49450549431 -178571.42857142852
  13736.263736263729 -302197.80219780206 178571.42857142852 -247252.74725274718 -13736.263736263732 54945.054945054944 -178571.42857142852 494505.49450549431];
 
-% dof returns degree of freedom
-function n = dof(nx, ny)
-    n = (nx) * (ny + 1) * 2 - 3;
-    return
-end
-
 %
 % THIS IS MAIN TEST
 %
@@ -24,7 +18,7 @@ end
 warning('off', 'all');
 
 % parameters
-cases = [2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30, 40, 50]; % , 60, 70, 80, 90, 100, 200, 300
+cases = [2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]; % , 200, 300
 nmax = 20000;
 tol = 10 ^ -10;
 
@@ -50,7 +44,7 @@ ebecgtimes = NaN(1, size(cases, 2));
 % Execute test
 k = 0;
 for n = cases
-    k++
+    k = k + 1;
     % setup to create matrix and force
     K = build_global_matrix(e, n, n, true);
     free_idx = build_free_idx(n, n);
@@ -64,10 +58,9 @@ for n = cases
 
     % execute CG method
     disp(sprintf("start CG method n == %d", n));
-    [_, start, _] = cputime();
-    [_, iter, errors] = cg(Ku, fu', x0', nmax, tol);
-    [_, finish, _] = cputime();
-    total = finish - start;
+    tic();
+    [~, iter, errors] = cg(Ku, fu', x0', nmax, tol);
+    total = toc();
     disp(sprintf("finish CG method %d iteration, %d seconds", iter, total));
     % save CG method result
     cerrors(k, :) = errors;
@@ -78,10 +71,9 @@ for n = cases
 
     % execute PCG method
     disp(sprintf("start PCG method n == %d", n));
-    [_, start, _] = cputime();
-    [_, iter, errors] = pcg(Ku, fu', x0', nmax, tol, @(r) P \ r);
-    [_, finish, _] = cputime();
-    total = finish - start;
+    tic();
+    [~, iter, errors] = pcg(Ku, fu', x0', nmax, tol, @(r) P \ r);
+    total = toc();
     disp(sprintf("finish PCG method %d iteration, %d seconds", iter, total));
     % save PCG method result
     perrors(k, :) = errors;
@@ -90,28 +82,27 @@ for n = cases
 
     % execute PCG method with EBE
     disp(sprintf("start PCG method with EBE n == %d", n));
-    [_, startpre, _] = cputime();
+    tid = tic();
     
     % ~ 100 elements
     % apply_Pu = build_ebe_from_big_element(K, e, n, n, free_idx);
 
     % ~ 50 elements
-    apply_Pu = build_ebe_from_each_element(Ku, e, n, n);
+    % apply_Pu = build_ebe_from_each_element(Ku, e, n, n);
     
     % ~ 100 elements
-    % apply_Pu = build_ebe_from_each_element_compact(Ku, e, n, n);
+    apply_Pu = build_ebe_from_each_element_compact(Ku, e, n, n);
     
     
-    [_, start, _] = cputime();
-    [_, iter, errors] = pcg(Ku, fu', x0', nmax, tol, apply_Pu);
-    [_, finish, _] = cputime();
-    total = finish - startpre;
+    setuptime = toc(tid);
+    [~, iter, errors] = pcg(Ku, fu', x0', nmax, tol, apply_Pu);
+    total = toc(tid);
     disp(sprintf("finish PCG method %d iteration, %d seconds", iter, total));
     % save PCG method result
     ebeerrors(k, :) = errors;
     ebeiters(k) = iter;
     ebetimes(k) = total;
-    ebecgtimes(k) = finish - start;
+    ebecgtimes(k) = total - setuptime;
 end
 
 
@@ -121,7 +112,8 @@ end
 %
 
 % save cputime result
-loglog(dofs, ctimes', ';CG method;', dofs, ptimes', ';PCG method;', dofs, ebetimes', ';PCG with EBE;', dofs, ebecgtimes', ';EBE without P;', dofs, ebetimes' - ebecgtimes', ';EBE;');
+loglog(dofs, ctimes', dofs, ptimes', dofs, ebetimes', dofs, ebecgtimes', dofs, ebetimes' - ebecgtimes');
+legend('CG method', 'PCG method', 'PCG with EBE', 'EBE without P', 'EBE');
 title("calculation time");
 ylabel("calculation time");
 xlabel("degrees of freedom");
@@ -130,7 +122,8 @@ print("cputime.png", "-dpng")
 csvwrite("cputime.csv", [dofs', ctimes', ptimes', ebetimes', ebecgtimes'])
 
 % save iterations result
-plot(dofs, citers', ';CG method;', dofs, piters', ';PCG method;', dofs, ebeiters', ';PCG with EBE;');
+plot(dofs, citers', dofs, piters', dofs, ebeiters');
+legend('CG method', 'PCG method', 'PCG with EBE');
 title("count of iteration");
 ylabel("iterations");
 xlabel("degrees of freedom");
@@ -140,7 +133,8 @@ csvwrite("iterations.csv", [dofs', citers', piters', ebeiters'])
 
 % save errors result
 maxn = max(citers(end), piters(end))
-semilogy(1:maxn, cerrors(end, 1:maxn), ';CG method;', 1:maxn, perrors(end, 1:maxn), ';PCG method;', 1:maxn, ebeerrors(end, 1:maxn), ';PCG with EBE;');
+semilogy(1:maxn, cerrors(end, 1:maxn), 1:maxn, perrors(end, 1:maxn), 1:maxn, ebeerrors(end, 1:maxn));
+legend('CG method', 'PCG method', 'PCG with EBE', 'EBE without P', 'EBE');
 title("size of error");
 ylabel("error");
 xlabel("iteration");

@@ -5,9 +5,9 @@ function apply_P = build_ebe_from_big_element(A, ematrix, nx, ny, free_idx)
     % validate
     if nx < 1 || ny < 1
         error("nx and ny must greater than or equals to 2")
-    else size(ematrix, 1) != 8 || size(ematrix, 2) != 8
+    elseif size(ematrix, 1) ~= 8 || size(ematrix, 2) ~= 8
         error("matrix of element must be 8 * 8 matrix")
-    else size(A, 1) != points || size(A, 2) != points
+    elseif size(A, 1) ~= points || size(A, 2) ~= points
         error("matrix A is not match to nx, ny")
     end
 
@@ -30,7 +30,7 @@ function apply_P = build_ebe_from_big_element(A, ematrix, nx, ny, free_idx)
             % create element matrix
             idx = build_index_for_element(nx, i, j);
             Ae = sparse(points, points);
-            Ae(idx, idx) += ematrix;
+            Ae(idx, idx) = Ae(idx, idx) + ematrix;
 
             % scaled, regularzied element array
             rAe = Eye + Adsi * (Ae - diag(diag(Ae))) * Adsi;

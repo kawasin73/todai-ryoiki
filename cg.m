@@ -17,8 +17,8 @@ function [x, iter, errors] = cg(A, b, x0, nmax, tol)
     errors(1) = rho;
 
     while iter < nmax-1 && rho > tol
-        iter++;
-        if iter != 1
+        iter = iter + 1;
+        if iter ~= 1
             beta = rho / rho2;
             p = r + beta * p;
         end
@@ -29,7 +29,6 @@ function [x, iter, errors] = cg(A, b, x0, nmax, tol)
         r = r - alpha * (A * p);
         rho = r' * r;
         errors(iter + 1) = rho;
-        x;
     end
 
     return

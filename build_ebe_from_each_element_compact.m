@@ -2,7 +2,7 @@ function apply_P = build_ebe_from_each_element_compact(Au, ematrix, nx, ny)
     % validate
     if nx < 2 || ny < 2
         error("nx and ny must greater than or equals to 2")
-    else size(ematrix, 1) != 8 || size(ematrix, 2) != 8
+    elseif size(ematrix, 1) ~= 8 || size(ematrix, 2) ~= 8
         error("matrix of element must be 8 * 8 matrix")
     end
     
@@ -48,7 +48,7 @@ function apply_P = build_ebe_from_each_element_compact(Au, ematrix, nx, ny)
             L9s(:, :, eidx) = L;
             D9s(:, :, eidx) = D;
             U9s(:, :, eidx) = L';
-            eidx += 1;
+            eidx = eidx + 1;
         end
     end
     
@@ -91,8 +91,8 @@ end
 
 function idx = build_new_index_for_element_swap(nx, i, j)
     idx = build_index_for_element(nx, i, j);
-    idx(1:4) -= 2 * j;
-    idx(5:8) -= 2 * (j+1);
+    idx(1:4) = idx(1:4) - 2 * j;
+    idx(5:8) = idx(5:8) - 2 * (j+1);
     if i == 1
         idx = idx(3:6);
     else

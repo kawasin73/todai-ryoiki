@@ -11,11 +11,11 @@ function A = get_element_matrix(i, j, nx, ny, As)
     end
     switch (i)
     case 1
-        eidx += 1;
+        eidx = eidx + 1;
     case nx
-        eidx += 3;
+        eidx = eidx + 3;
     otherwise
-        eidx += 2;
+        eidx = eidx + 2;
     end
     A = As(:,:,eidx);
     return

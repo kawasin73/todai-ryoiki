@@ -19,8 +19,8 @@ function [x, iter, errors] = pcg(A, b, x0, nmax, tol, apply_P)
     errors(1) = r' * r;
 
     while iter < nmax-1 && errors(iter+1) > tol
-        iter++;
-        if iter != 1
+        iter = iter + 1;
+        if iter ~= 1
             beta = rho / rho2;
             p = z + beta * p;
         end
@@ -32,7 +32,6 @@ function [x, iter, errors] = pcg(A, b, x0, nmax, tol, apply_P)
         z = apply_P(r);
         rho = r' * z;
         errors(iter + 1) = r' * r;
-        x;
     end
 
     return

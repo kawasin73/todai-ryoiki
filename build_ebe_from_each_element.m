@@ -2,7 +2,7 @@ function apply_P = build_ebe_from_each_element(Au, ematrix, nx, ny)
     % validate
     if nx < 2 || ny < 2
         error("nx and ny must greater than or equals to 2")
-    else size(ematrix, 1) != 8 || size(ematrix, 2) != 8
+    elseif size(ematrix, 1) ~= 8 || size(ematrix, 2) ~= 8
         error("matrix of element must be 8 * 8 matrix")
     end
     
@@ -40,7 +40,7 @@ function apply_P = build_ebe_from_each_element(Au, ematrix, nx, ny)
             Ls(:, :, eidx) = L;
             Ds(:, :, eidx) = D;
             Us(:, :, eidx) = L';
-            eidx += 1;
+            eidx = eidx + 1;
         end
     end
     
