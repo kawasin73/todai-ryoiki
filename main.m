@@ -87,11 +87,15 @@ for n = cases
     % ~ 100 elements
     % apply_Pu = build_ebe_from_big_element(K, e, n, n, free_idx);
 
+    % non-parallel mode
     % ~ 50 elements
-    % apply_Pu = build_ebe_from_each_element(Ku, e, n, n);
+    % apply_Pu = build_ebe_from_each_element(Ku, e, n, n, false);
+
+    % parallel mode
+    apply_Pu = build_ebe_from_each_element(Ku, e, n, n, true);
     
     % ~ 100 elements
-    apply_Pu = build_ebe_from_each_element_compact(Ku, e, n, n);
+    % apply_Pu = build_ebe_from_each_element_compact(Ku, e, n, n);
     
     
     setuptime = toc(tid);

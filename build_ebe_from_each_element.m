@@ -1,4 +1,4 @@
-function apply_P = build_ebe_from_each_element(Au, ematrix, nx, ny)
+function apply_P = build_ebe_from_each_element(Au, ematrix, nx, ny, is_parallel)
     % validate
     if nx < 2 || ny < 2
         error("nx and ny must greater than or equals to 2")
@@ -44,7 +44,71 @@ function apply_P = build_ebe_from_each_element(Au, ematrix, nx, ny)
         end
     end
     
-    apply_P = @(r) apply_ebe_from_each_element(r, Adis, Ls, Ds, Us, nx, ny);
+    if is_parallel
+        apply_P = @(r) apply_ebe_from_each_element_parallel(r, Adis, Ls, Ds, Us, nx, ny);
+    else
+        apply_P = @(r) apply_ebe_from_each_element(r, Adis, Ls, Ds, Us, nx, ny);
+    end
+    return;
+end
+
+function r = apply_ebe_parallel(r, As, nx, ny, is_reverse)
+    if is_reverse
+        rows = 1:-1:0;
+        cols = 2:-1:1;
+    else
+        rows = 0:1;
+        cols = 1:2;
+    end
+    for row = rows
+        if mod(ny, 2) == 0
+            loop = ny / 2;
+        else
+            loop = (ny + 1 - 2 * row) / 2;
+        end
+        prefix = row * 2 * nx;
+        rmat = reshape(r(prefix+1:prefix+4*nx*loop), 4*nx, loop);
+        parfor li = 1:loop
+            rseg = rmat(:, li);
+            j = 2 * li - 1 + row;
+            for s = cols
+                for i = s:2:nx
+                    A = get_element_matrix(i, j, nx, ny, As);
+                    base_upper = 2 * (i-2) + 2*nx;
+                    base_lower = 2 * (i-2);
+                    idx = [base_lower+1, base_lower+2, base_lower+3, base_lower+4 base_upper+3, base_upper+4, base_upper+1, base_upper+2];
+
+                    if i == 1
+                        A = A(1:4, 1:4);
+                        idx = idx(3:6);
+                    end
+                    rseg(idx) = A \ rseg(idx);
+                end
+            end
+            rmat(:, li) = rseg;
+        end
+        r(prefix+1:prefix+4*nx*loop) = reshape(rmat, 4*nx*loop, 1);
+    end
+    return
+end
+
+function result = apply_ebe_from_each_element_parallel(r, Adis, Ls, Ds, Us, nx, ny)
+    % r = Ads \ r
+    r = Adis * r;
+
+    % r = Ls \ r
+    r = apply_ebe_parallel(r, Ls, nx, ny, false);
+
+    % r = Ds \ r
+    r = apply_ebe_parallel(r, Ds, nx, ny, false);
+
+    % r = Us \ r
+    r = apply_ebe_parallel(r, Us, nx, ny, true);
+
+    % r = Ads \ r
+    r = Adis * r;
+
+    result = r;
     return;
 end
 
