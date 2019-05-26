@@ -2,9 +2,9 @@ function apply_P = build_ebe_from_each_element_compact(Au, ematrix, nx, ny)
     % validate
     if nx < 2 || ny < 2
         error("nx and ny must greater than or equals to 2")
-    elseif size(ematrix, 1) != 8 || size(ematrix, 2) != 8
+    else size(ematrix, 1) != 8 || size(ematrix, 2) != 8
         error("matrix of element must be 8 * 8 matrix")
-    endif
+    end
     
     % diagonal matrix of A
     Ad = diag(diag(Au));
@@ -37,7 +37,7 @@ function apply_P = build_ebe_from_each_element_compact(Au, ematrix, nx, ny)
                 tmp = Ae(:, 5:6);
                 Ae(:, 5:6) = Ae(:, 7:8);
                 Ae(:, 7:8) = tmp;
-            endif
+            end
         
             % https://octave.sourceforge.io/octave/function/lu.html
             % When called with two or three output arguments and a sparse input matrix, lu does not attempt to perform sparsity preserving column permutations
@@ -49,8 +49,8 @@ function apply_P = build_ebe_from_each_element_compact(Au, ematrix, nx, ny)
             D9s(:, :, eidx) = D;
             U9s(:, :, eidx) = L';
             eidx += 1;
-        endfor
-    endfor
+        end
+    end
     
     points = nx * (ny+1) * 2;
     
@@ -66,28 +66,28 @@ function apply_P = build_ebe_from_each_element_compact(Au, ematrix, nx, ny)
             U = get_element_matrix(i, j, nx, ny, U9s);
             if i == 1
                 U = U(1:4, 1:4);
-            endif
+            end
             Us(idx, idx) = Us(idx, idx) * U;
 
             % calc Ds
             D = get_element_matrix(i, j, nx, ny, D9s);
             if i == 1
                 D = D(1:4, 1:4);
-            endif
+            end
             Ds(idx, idx) = D * Ds(idx, idx);
             
             % calc Ls
             L = get_element_matrix(i, j, nx, ny, L9s);
             if i == 1
                 L = L(1:4, 1:4);
-            endif
+            end
             Ls(idx, idx) = L * Ls(idx, idx);
-        endfor
-    endfor
+        end
+    end
     
     apply_P = @(r) apply_ebe_from_each_element_compact(r, Adis, Ls, Ds, Us);
     return;
-endfunction
+end
 
 function idx = build_new_index_for_element_swap(nx, i, j)
     idx = build_index_for_element(nx, i, j);
@@ -100,9 +100,9 @@ function idx = build_new_index_for_element_swap(nx, i, j)
         tmp = idx(7:8);
         idx(7:8) = idx(5:6);
         idx(5:6) = tmp;
-    endif
+    end
     return
-endfunction
+end
 
 function result = apply_ebe_from_each_element_compact(r, Adis, Ls, Ds, Us)
     r = Adis * r;
@@ -113,4 +113,4 @@ function result = apply_ebe_from_each_element_compact(r, Adis, Ls, Ds, Us)
 
     result = r;
     return;
-endfunction
+end

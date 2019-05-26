@@ -21,7 +21,7 @@ function [x, iter, errors] = cg(A, b, x0, nmax, tol)
         if iter != 1
             beta = rho / rho2;
             p = r + beta * p;
-        endif
+        end
 
         alpha = rho / (p' * A * p);
         x = x + alpha * p;
@@ -30,7 +30,7 @@ function [x, iter, errors] = cg(A, b, x0, nmax, tol)
         rho = r' * r;
         errors(iter + 1) = rho;
         x;
-    endwhile
+    end
 
     return
-endfunction
+end

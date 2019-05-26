@@ -19,4 +19,4 @@ function A = get_element_matrix(i, j, nx, ny, As)
     end
     A = As(:,:,eidx);
     return
-endfunction
+end

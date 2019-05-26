@@ -9,4 +9,4 @@ function idx = build_index_for_element(nx, i, j)
     idx(5:8) += base_upper;
 
     return;
-endfunction
+end

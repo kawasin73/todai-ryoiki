@@ -5,11 +5,11 @@ function apply_P = build_ebe_from_big_element(A, ematrix, nx, ny, free_idx)
     % validate
     if nx < 1 || ny < 1
         error("nx and ny must greater than or equals to 2")
-    elseif size(ematrix, 1) != 8 || size(ematrix, 2) != 8
+    else size(ematrix, 1) != 8 || size(ematrix, 2) != 8
         error("matrix of element must be 8 * 8 matrix")
-    elseif size(A, 1) != points || size(A, 2) != points
+    else size(A, 1) != points || size(A, 2) != points
         error("matrix A is not match to nx, ny")
-    endif
+    end
 
     % diagonal matrix of A
     Ad = diag(diag(A));
@@ -43,12 +43,12 @@ function apply_P = build_ebe_from_big_element(A, ematrix, nx, ny, free_idx)
             % mutiply L, D, L'
             Ls = Ls * L;
             Ds = Ds * D;
-        endfor
-    endfor
+        end
+    end
 
     apply_P = @(r) apply_ebe_from_big_element(r, Adsi(free_idx, free_idx), Ls(free_idx, free_idx), Ds(free_idx, free_idx), Ls'(free_idx, free_idx));
     return;
-endfunction
+end
 
 function result = apply_ebe_from_big_element(r, Adsi, Ls, Ds, Us)
     r = Adsi * r;
@@ -58,4 +58,4 @@ function result = apply_ebe_from_big_element(r, Adsi, Ls, Ds, Us)
     r = Adsi * r;
     result = r;
     return;
-endfunction
+end

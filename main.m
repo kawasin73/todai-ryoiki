@@ -14,7 +14,7 @@ e = [ 494505.49450549431 178571.42857142852 -302197.80219780206 -13736.263736263
 function n = dof(nx, ny)
     n = (nx) * (ny + 1) * 2 - 3;
     return
-endfunction
+end
 
 %
 % THIS IS MAIN TEST
@@ -32,7 +32,7 @@ tol = 10 ^ -10;
 dofs = NaN(1, size(cases, 2));
 for i = 1:size(cases,2)
     dofs(i) = dof(cases(i), cases(i));
-endfor
+end
 
 % result containers
 cerrors = NaN(size(cases, 2), nmax);
@@ -112,7 +112,7 @@ for n = cases
     ebeiters(k) = iter;
     ebetimes(k) = total;
     ebecgtimes(k) = finish - start;
-endfor
+end
 
 
 

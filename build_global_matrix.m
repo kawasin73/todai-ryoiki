@@ -4,9 +4,9 @@ function result = build_global_matrix(ematrix, nx, ny, is_s)
     % validate
     if nx < 1 || ny < 1
         error("nx and ny must greater than or equals to 1")
-    elseif size(ematrix, 1) != 8 || size(ematrix, 2) != 8
+    else size(ematrix, 1) != 8 || size(ematrix, 2) != 8
         error("matrix of element must be 8 * 8 matrix")
-    endif
+    end
 
     % build base matrix
     points = (nx + 1) * (ny + 1) * 2;
@@ -15,7 +15,7 @@ function result = build_global_matrix(ematrix, nx, ny, is_s)
         result = sparse(points, points);
     else
         result = zeros(points, points);
-    endif
+    end
 
     % add element entry to each point
     for j = 1:ny
@@ -23,9 +23,9 @@ function result = build_global_matrix(ematrix, nx, ny, is_s)
             idx = build_index_for_element(nx, i, j);
             % add each element entry
             result(idx, idx) += ematrix;
-        endfor
-    endfor
+        end
+    end
 
     % return result matrix
     return;
-endfunction
+end

@@ -2,9 +2,9 @@ function apply_P = build_ebe_from_each_element(Au, ematrix, nx, ny)
     % validate
     if nx < 2 || ny < 2
         error("nx and ny must greater than or equals to 2")
-    elseif size(ematrix, 1) != 8 || size(ematrix, 2) != 8
+    else size(ematrix, 1) != 8 || size(ematrix, 2) != 8
         error("matrix of element must be 8 * 8 matrix")
-    endif
+    end
     
     % diagonal matrix of A
     Ad = diag(diag(Au));
@@ -29,7 +29,7 @@ function apply_P = build_ebe_from_each_element(Au, ematrix, nx, ny)
                 tmp = zeros(8, 8);
                 tmp(1:4, 1:4) = Ae(3:6, 3:6);
                 Ae = tmp;
-            endif
+            end
         
             % https://octave.sourceforge.io/octave/function/lu.html
             % When called with two or three output arguments and a sparse input matrix, lu does not attempt to perform sparsity preserving column permutations
@@ -41,12 +41,12 @@ function apply_P = build_ebe_from_each_element(Au, ematrix, nx, ny)
             Ds(:, :, eidx) = D;
             Us(:, :, eidx) = L';
             eidx += 1;
-        endfor
-    endfor
+        end
+    end
     
     apply_P = @(r) apply_ebe_from_each_element(r, Adis, Ls, Ds, Us, nx, ny);
     return;
-endfunction
+end
 
 function result = apply_ebe_from_each_element(r, Adis, Ls, Ds, Us, nx, ny)
     % r = Ads \ r
@@ -58,12 +58,12 @@ function result = apply_ebe_from_each_element(r, Adis, Ls, Ds, Us, nx, ny)
             L = get_element_matrix(i, j, nx, ny, Ls);
             if i == 1
                 L = L(1:4, 1:4);
-            endif
+            end
             idx = build_new_index_for_element(nx, i, j);
             
             r(idx) = L \ r(idx);
-        endfor
-    endfor
+        end
+    end
 
     % r = Ds \ r
     for j = 1:ny
@@ -71,12 +71,12 @@ function result = apply_ebe_from_each_element(r, Adis, Ls, Ds, Us, nx, ny)
             D = get_element_matrix(i, j, nx, ny, Ds);
             if i == 1
                 D = D(1:4, 1:4);
-            endif
+            end
             idx = build_new_index_for_element(nx, i, j);
             
             r(idx) = D \ r(idx);
-        endfor
-    endfor
+        end
+    end
 
     % r = Us \ r
     for j = ny:-1:1
@@ -84,16 +84,16 @@ function result = apply_ebe_from_each_element(r, Adis, Ls, Ds, Us, nx, ny)
             U = get_element_matrix(i, j, nx, ny, Us);
             if i == 1
                 U = U(1:4, 1:4);
-            endif
+            end
             idx = build_new_index_for_element(nx, i, j);
             
             r(idx) = U \ r(idx);
-        endfor
-    endfor
+        end
+    end
 
     % r = Ads \ r
     r = Adis * r;
 
     result = r;
     return;
-endfunction
+end
