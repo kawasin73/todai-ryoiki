@@ -1,8 +1,8 @@
-# build preconditioning matrix by EBE (Element By Element Method)
+% build preconditioning matrix by EBE (Element By Element Method)
 function apply_P = build_ebe_from_big_element(A, ematrix, nx, ny, free_idx)
     points = (nx+1) * (ny+1) * 2;
 
-    # validate
+    % validate
     if nx < 1 || ny < 1
         error("nx and ny must greater than or equals to 2")
     elseif size(ematrix, 1) != 8 || size(ematrix, 2) != 8
@@ -11,7 +11,7 @@ function apply_P = build_ebe_from_big_element(A, ematrix, nx, ny, free_idx)
         error("matrix A is not match to nx, ny")
     endif
 
-    # diagonal matrix of A
+    % diagonal matrix of A
     Ad = diag(diag(A));
 
     Eye = speye(points, points);
@@ -19,28 +19,28 @@ function apply_P = build_ebe_from_big_element(A, ematrix, nx, ny, free_idx)
     Ds = speye(points, points);
     Ad = sparse(Ad);
 
-    # Ad ^ 1/2
+    % Ad ^ 1/2
     Ads = sqrt(Ad);
-    # Ad ^ -1/2
+    % Ad ^ -1/2
     Adsi = inv(Ads);
 
-    # caluculate each element matrix
+    % caluculate each element matrix
     for j = 1:(ny)
         for i = 1:(nx)
-            # create element matrix
+            % create element matrix
             idx = build_index_for_element(nx, i, j);
             Ae = sparse(points, points);
             Ae(idx, idx) += ematrix;
 
-            # scaled, regularzied element array
+            % scaled, regularzied element array
             rAe = Eye + Adsi * (Ae - diag(diag(Ae))) * Adsi;
 
-            # https://octave.sourceforge.io/octave/function/lu.html
-            # When called with two or three output arguments and a sparse input matrix, lu does not attempt to perform sparsity preserving column permutations
+            % https://octave.sourceforge.io/octave/function/lu.html
+            % When called with two or three output arguments and a sparse input matrix, lu does not attempt to perform sparsity preserving column permutations
             [L, U] = lu(rAe);
             D = diag(diag(U));
 
-            # mutiply L, D, L'
+            % mutiply L, D, L'
             Ls = Ls * L;
             Ds = Ds * D;
         endfor

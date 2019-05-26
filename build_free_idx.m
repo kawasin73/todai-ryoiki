@@ -1,4 +1,4 @@
-# build free point entry index array
+% build free point entry index array
 function idx = build_free_idx(nx, ny)
     idx = [];
     for j = 1:(ny+1)
@@ -7,6 +7,6 @@ function idx = build_free_idx(nx, ny)
         idx = horzcat(idx, startidx:endidx);
     endfor
 
-    # return free index array
+    % return free index array
     return
 endfunction

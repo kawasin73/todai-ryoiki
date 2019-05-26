@@ -1,5 +1,5 @@
-# build index in unknown matrix for element
-# returns 8 size vector or 4 size vector (4 size when left fixed element)
+% build index in unknown matrix for element
+% returns 8 size vector or 4 size vector (4 size when left fixed element)
 function idx = build_new_index_for_element(nx, i, j)
     idx = build_index_for_element(nx, i, j);
     idx(1:4) -= 2 * j;

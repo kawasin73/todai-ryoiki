@@ -1,14 +1,14 @@
 function apply_P = build_ebe_from_each_element_compact(Au, ematrix, nx, ny)
-    # validate
+    % validate
     if nx < 2 || ny < 2
         error("nx and ny must greater than or equals to 2")
     elseif size(ematrix, 1) != 8 || size(ematrix, 2) != 8
         error("matrix of element must be 8 * 8 matrix")
     endif
     
-    # diagonal matrix of A
+    % diagonal matrix of A
     Ad = diag(diag(Au));
-    # Ad ^ 1/2
+    % Ad ^ 1/2
     Adis = inv(sqrt(Ad));
     
     A9 = build_global_matrix(ematrix, 3, 3, false);
@@ -19,7 +19,7 @@ function apply_P = build_ebe_from_each_element_compact(Au, ematrix, nx, ny)
     U9s = zeros(8, 8, 9);
     
     eidx = 1;
-    # caluculate 9 element matrix
+    % caluculate 9 element matrix
     for j = 1:3
         for i = 1:3
             idx = build_index_for_element(3, i, j);
@@ -30,7 +30,7 @@ function apply_P = build_ebe_from_each_element_compact(Au, ematrix, nx, ny)
                 tmp(1:4, 1:4) = Ae(3:6, 3:6);
                 Ae = tmp;
             else
-                # swap order
+                % swap order
                 tmp = Ae(5:6, :);
                 Ae(5:6, :) = Ae(7:8, :);
                 Ae(7:8, :) = tmp;
@@ -39,12 +39,12 @@ function apply_P = build_ebe_from_each_element_compact(Au, ematrix, nx, ny)
                 Ae(:, 7:8) = tmp;
             endif
         
-            # https://octave.sourceforge.io/octave/function/lu.html
-            # When called with two or three output arguments and a sparse input matrix, lu does not attempt to perform sparsity preserving column permutations
+            % https://octave.sourceforge.io/octave/function/lu.html
+            % When called with two or three output arguments and a sparse input matrix, lu does not attempt to perform sparsity preserving column permutations
             [L, U] = lu(Ae);
             D = diag(diag(U));
             
-            # mutiply L, D, L'
+            % mutiply L, D, L'
             L9s(:, :, eidx) = L;
             D9s(:, :, eidx) = D;
             U9s(:, :, eidx) = L';
@@ -62,21 +62,21 @@ function apply_P = build_ebe_from_each_element_compact(Au, ematrix, nx, ny)
         for i = 1:nx
             idx = build_new_index_for_element_swap(nx, i, j);
             
-            # calc Us
+            % calc Us
             U = get_element_matrix(i, j, nx, ny, U9s);
             if i == 1
                 U = U(1:4, 1:4);
             endif
             Us(idx, idx) = Us(idx, idx) * U;
 
-            # calc Ds
+            % calc Ds
             D = get_element_matrix(i, j, nx, ny, D9s);
             if i == 1
                 D = D(1:4, 1:4);
             endif
             Ds(idx, idx) = D * Ds(idx, idx);
             
-            # calc Ls
+            % calc Ls
             L = get_element_matrix(i, j, nx, ny, L9s);
             if i == 1
                 L = L(1:4, 1:4);
@@ -96,7 +96,7 @@ function idx = build_new_index_for_element_swap(nx, i, j)
     if i == 1
         idx = idx(3:6);
     else
-        # swap order
+        % swap order
         tmp = idx(7:8);
         idx(7:8) = idx(5:6);
         idx(5:6) = tmp;

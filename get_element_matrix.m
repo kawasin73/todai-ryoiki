@@ -1,4 +1,4 @@
-# get matrix from As which match type 1 ~ 9.
+% get matrix from As which match type 1 ~ 9.
 function A = get_element_matrix(i, j, nx, ny, As)
     eidx = 0;
     switch (j)

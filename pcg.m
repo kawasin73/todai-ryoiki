@@ -1,10 +1,10 @@
-#
-# Preconditioned Conjugate Gradient Method
-#
+%
+% Preconditioned Conjugate Gradient Method
+%
 
-# implementation of Preconditioned Conjugate Gradient Method
+% implementation of Preconditioned Conjugate Gradient Method
 function [x, iter, errors] = pcg(A, b, x0, nmax, tol, apply_P)
-    # setup
+    % setup
     iter = 0;
     x = x0;
     r = b - (A * x);
@@ -14,7 +14,7 @@ function [x, iter, errors] = pcg(A, b, x0, nmax, tol, apply_P)
     rho2 = 0;
     rho = r' * z;
 
-    # preallocate errors array
+    % preallocate errors array
     errors = NaN(1, nmax);
     errors(1) = r' * r;
 

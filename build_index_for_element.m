@@ -1,5 +1,5 @@
-# build index in matrix for element
-# returns 8 size vector
+% build index in matrix for element
+% returns 8 size vector
 function idx = build_index_for_element(nx, i, j)
     base = (i - 1) * 2;
     base_lower = 2 * (nx + 1) * (j - 1);

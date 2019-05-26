@@ -1,14 +1,14 @@
 function apply_P = build_ebe_from_each_element(Au, ematrix, nx, ny)
-    # validate
+    % validate
     if nx < 2 || ny < 2
         error("nx and ny must greater than or equals to 2")
     elseif size(ematrix, 1) != 8 || size(ematrix, 2) != 8
         error("matrix of element must be 8 * 8 matrix")
     endif
     
-    # diagonal matrix of A
+    % diagonal matrix of A
     Ad = diag(diag(Au));
-    # Ad ^ 1/2
+    % Ad ^ 1/2
     Adis = inv(sqrt(Ad));
     
     A9 = build_global_matrix(ematrix, 3, 3, false);
@@ -19,7 +19,7 @@ function apply_P = build_ebe_from_each_element(Au, ematrix, nx, ny)
     Us = zeros(8, 8, 9);
     
     eidx = 1;
-    # caluculate each element matrix
+    % caluculate each element matrix
     for j = 1:3
         for i = 1:3
             idx = build_index_for_element(3, i, j);
@@ -31,12 +31,12 @@ function apply_P = build_ebe_from_each_element(Au, ematrix, nx, ny)
                 Ae = tmp;
             endif
         
-            # https://octave.sourceforge.io/octave/function/lu.html
-            # When called with two or three output arguments and a sparse input matrix, lu does not attempt to perform sparsity preserving column permutations
+            % https://octave.sourceforge.io/octave/function/lu.html
+            % When called with two or three output arguments and a sparse input matrix, lu does not attempt to perform sparsity preserving column permutations
             [L, U] = lu(Ae);
             D = diag(diag(U));
             
-            # mutiply L, D, L'
+            % mutiply L, D, L'
             Ls(:, :, eidx) = L;
             Ds(:, :, eidx) = D;
             Us(:, :, eidx) = L';
@@ -49,10 +49,10 @@ function apply_P = build_ebe_from_each_element(Au, ematrix, nx, ny)
 endfunction
 
 function result = apply_ebe_from_each_element(r, Adis, Ls, Ds, Us, nx, ny)
-    # r = Ads \ r
+    % r = Ads \ r
     r = Adis * r;
     
-    # r = Ls \ r
+    % r = Ls \ r
     for j = 1:ny
         for i = 1:nx
             L = get_element_matrix(i, j, nx, ny, Ls);
@@ -65,7 +65,7 @@ function result = apply_ebe_from_each_element(r, Adis, Ls, Ds, Us, nx, ny)
         endfor
     endfor
 
-    # r = Ds \ r
+    % r = Ds \ r
     for j = 1:ny
         for i = 1:nx
             D = get_element_matrix(i, j, nx, ny, Ds);
@@ -78,7 +78,7 @@ function result = apply_ebe_from_each_element(r, Adis, Ls, Ds, Us, nx, ny)
         endfor
     endfor
 
-    # r = Us \ r
+    % r = Us \ r
     for j = ny:-1:1
         for i = nx:-1:1
             U = get_element_matrix(i, j, nx, ny, Us);
@@ -91,7 +91,7 @@ function result = apply_ebe_from_each_element(r, Adis, Ls, Ds, Us, nx, ny)
         endfor
     endfor
 
-    # r = Ads \ r
+    % r = Ads \ r
     r = Adis * r;
 
     result = r;

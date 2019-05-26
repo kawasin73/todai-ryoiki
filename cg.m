@@ -1,10 +1,10 @@
-#
-# Conjugate Gradient Method
-#
+%
+% Conjugate Gradient Method
+%
 
-# implementation of Conjugate Gradient Method
+% implementation of Conjugate Gradient Method
 function [x, iter, errors] = cg(A, b, x0, nmax, tol)
-    # setup
+    % setup
     iter = 0;
     x = x0;
     r = b - (A * x);
@@ -12,7 +12,7 @@ function [x, iter, errors] = cg(A, b, x0, nmax, tol)
     rho2 = 0;
     rho = r' * r;
 
-    # preallocate errors array
+    % preallocate errors array
     errors = NaN(1, nmax);
     errors(1) = rho;
 
