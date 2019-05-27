@@ -66,12 +66,25 @@ function r = apply_ebe_parallel(r, As, nx, ny, is_reverse)
         else
             loop = (ny + 1 - 2 * row) / 2;
         end
+        % prefix shifts segment for row.
+        % if row is 0 then each segment is row 1, 3, 5, ...
+        % if row is 1 then each segment is row 2, 4, 6, ...
         prefix = row * 2 * nx;
+        % r is vector size of (2 * nx * (ny + 1), 1).
+        % it is not allowed to access (and update) segment of r by indexing
+        % like `r( 2*li+1:2*li ) = [x, x]` in `parfor`, except indexing simply
+        % using loop variable like `r(li) = x`.
+        % in order to update segment of r, reshape r to `rmat` which size is
+        % (segment_size:loop_size) and access `rmat` by `rmat(:,li) = [...]`.
+        %
+        % segment_size is nx * 4 which is entries for 1 row of elements
         rmat = reshape(r(prefix+1:prefix+4*nx*loop), 4*nx, loop);
         parfor li = 1:loop
             rseg = rmat(:, li);
             j = 2 * li - 1 + row;
+            % update entries in 2 colors of 1 row of elements sequentially.
             for s = cols
+                % update entries in 1 color in this loop.
                 for i = s:2:nx
                     A = get_element_matrix(i, j, nx, ny, As);
                     base_upper = 2 * (i-2) + 2*nx;
